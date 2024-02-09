@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Application</title>
+</head>
+
+<body>
+    <h1>Welcome to Chat Application</h1>
+    <div id="username-form">
+        <label for="username">Enter your username:</label>
+        <input type="text" id="username" />
+        <button onclick="connect()">Connect</button>
+    </div>
+    <div id="chat-form" style="display: none;">
+        <label for="receiver">Enter receiver's username:</label>
+        <input type="text" id="receiver" />
+        <label for="message">Enter your message:</label>
+        <input type="text" id="message" />
+        <button onclick="sendMessage()">Send</button>
+    </div>
+    <div id="messages"></div>
+
+    <script>
+        let ws;
+        let username;
+
+        function connect() {
+            username = document.getElementById("username").value;
+            if (username.trim() === "") {
+                alert("Please enter a username");
+                return;
+            }
+
+            document.getElementById("username-form").style.display = "none";
+            document.getElementById("chat-form").style.display = "block";
+
+            ws = new WebSocket(`ws://localhost:8000/ws/${username}`);
+
+            ws.onopen = () => {
+                console.log("Connected to server");
+            };
+
+            ws.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                displayMessage(message.sender, message.content);
+            };
+
+            ws.onclose = () => {
+                console.log("Connection closed");
+            };
+
+            ws.onerror = (error) => {
+                console.error("WebSocket error:", error);
+            };
+        }
+
+        function sendMessage() {
+            const receiver = document.getElementById("receiver").value;
+            const message = document.getElementById("message").value;
+
+            const data = {
+                sender: username,
+                receiver: receiver,
+                content: message
+            };
+
+            ws.send(JSON.stringify(data));
+            displayMessage(username, message);
+        }
+
+        function displayMessage(sender, content) {
+            const messageElement = document.createElement("div");
+            messageElement.textContent = `${sender}: ${content}`;
+            document.getElementById("messages").appendChild(messageElement);
+        }
+    </script>
+</body>
+
+</html>
